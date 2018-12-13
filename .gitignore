@@ -1,2 +1,5 @@
 *__pycache__*
+FeatureVector/Data/*
+FeatureVector/Model/*
+*.idea*
 
