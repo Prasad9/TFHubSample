@@ -2,4 +2,6 @@
 FeatureVector/Data/*
 FeatureVector/Model/*
 *.idea*
+ImageAugmentation/ClubbedModules/Data/*
+ImageAugmentation/ClubbedModules/Model/*
 
