@@ -1,11 +1,11 @@
 import tensorflow as tf
-from tqdm import tqdm
-import csv
 import shutil
 import os
+from tqdm import tqdm
+import csv
 
-from Data import Data
 from Model import Model
+from Data import Data
 
 class Train:
     def __init__(self, params):
@@ -13,7 +13,6 @@ class Train:
         self._batch_size = params['BATCH_SIZE']
         self._lr = params['LEARNING_RATE']
         self._n_class = params['N_CLASS']
-        self._divide_lr = params['DIVIDE_LEARNING_RATE_AT']
 
         self.data = Data(params)
         self.model = Model(params)
@@ -31,12 +30,12 @@ class Train:
             for epoch_no in range(self._epochs):
                 train_loss, train_accuracy = 0, 0
                 val_loss, val_accuracy = 0, 0
-                if epoch_no in self._divide_lr:
-                    current_lr /= 10
+                #if epoch_no in self._divide_lr:
+                #    current_lr /= 10
 
                 print('\nEpoch: {}, lr: {:.6f}'.format(epoch_no + 1, current_lr))
                 self.model.dataset.initialize_iterator(sess, self.data.X_train,
-                                                       self.data.y_train)
+                                                       self.data.train_seq_len, self.data.y_train)
                 try:
                     with tqdm(total=self.data.get_train_data_length()) as pbar:
                         while True:
@@ -48,7 +47,8 @@ class Train:
                 except tf.errors.OutOfRangeError:
                     pass
 
-                self.model.dataset.initialize_iterator(sess, self.data.X_val, self.data.y_val)
+                self.model.dataset.initialize_iterator(sess, self.data.X_val,
+                                                       self.data.val_seq_len, self.data.y_val)
                 try:
                     with tqdm(total=self.data.get_val_data_length()) as pbar:
                         while True:
@@ -71,36 +71,39 @@ class Train:
     def test(self):
         test_graph = tf.Graph()
         with test_graph.as_default():
-            with tf.Session(graph=test_graph) as sess,\
+            with tf.Session(graph=test_graph) as sess, \
                     open(os.path.join(self._save_path, 'results.csv'), 'w') as fid:
                 sess.run([tf.global_variables_initializer(), tf.tables_initializer()])
                 saved_model_path = os.path.join(self._save_path, str(self._epochs - 1))
                 tf.saved_model.loader.load(sess, [tf.saved_model.tag_constants.SERVING], saved_model_path)
-                self.model.dataset.initialize_test_iterator_for_saved_model_graph(sess, self.data.X_test)
+                self.model.dataset.initialize_test_iterator_for_saved_model_graph(sess, self.data.X_test_id,
+                                                                    self.data.X_test, self.data.test_seq_len)
 
                 csv_fid = csv.writer(fid)
-                csv_fid.writerow(['Image_name'] + ['attrib_{:02d}'.format(i + 1)
-                                                   for i in range(self._n_class)])
+                csv_fid.writerow(['PhraseId', 'Sentiment'])
 
                 predictions_op = test_graph.get_tensor_by_name('predictions:0')
-                file_path_op = test_graph.get_tensor_by_name('file_path:0')
+                text_id_op = test_graph.get_tensor_by_name('text_id:0')
                 try:
                     with tqdm(total=self.data.get_test_data_length()) as pbar:
                         while True:
-                            predictions, filenames = sess.run([predictions_op, file_path_op])
+                            predictions, phrase_id = sess.run([predictions_op, text_id_op])
                             predictions = predictions.tolist()
+                            phrase_id = phrase_id.tolist()
 
-                            for p, f in zip(predictions, filenames):
-                                f = f.decode('ascii')
-                                f = os.path.basename(f)
-                                csv_fid.writerow([f] + p)
+                            for pred, p in zip(predictions, phrase_id):
+                                csv_fid.writerow([p, pred])
                             pbar.update(self._batch_size)
                 except tf.errors.OutOfRangeError:
                     pass
 
     def _save_model(self, sess, epoch_no):
-        inputs = {'pl_X': sess.graph.get_tensor_by_name('pl_image_paths:0'),
-                  'pl_y': sess.graph.get_tensor_by_name('pl_labels:0')}
+        inputs = {
+            'pl_phrase_id': sess.graph.get_tensor_by_name('pl_phrase_id:0'),
+            'pl_phrase_text': sess.graph.get_tensor_by_name('pl_phrase_text:0'),
+            'pl_phrase_len': sess.graph.get_tensor_by_name('pl_phrase_len:0'),
+            'pl_sentiment': sess.graph.get_tensor_by_name('pl_sentiment:0')
+        }
         outputs = {'accuracy': self.model.accuracy}
 
         export_dir = os.path.join(self._save_path, str(epoch_no))
