@@ -11,4 +11,5 @@ TextEmbeddings/WordLevel/Model/*
 ObjectDetection/Data/ImgsPlot
 VideoClassification/Model/*
 VideoClassification/Data/*
+Generators/Images/*
 
