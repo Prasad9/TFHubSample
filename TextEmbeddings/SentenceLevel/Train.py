@@ -13,7 +13,6 @@ class Train:
         self._batch_size = params['BATCH_SIZE']
         self._lr = params['LEARNING_RATE']
         self._n_class = params['N_CLASS']
-        self._divide_lr = params['DIVIDE_LEARNING_RATE_AT']
 
         self.data = Data(params)
         self.model = Model(params)
@@ -31,12 +30,9 @@ class Train:
             for epoch_no in range(self._epochs):
                 train_loss, train_accuracy = 0, 0
                 val_loss, val_accuracy = 0, 0
-                if epoch_no in self._divide_lr:
-                    current_lr /= 10
 
                 print('\nEpoch: {}, lr: {:.6f}'.format(epoch_no + 1, current_lr))
-                self.model.dataset.initialize_iterator(sess, self.data.X_train,
-                                                       self.data.train_seq_len, self.data.y_train)
+                self.model.dataset.initialize_iterator(sess, self.data.X_train, self.data.y_train)
                 try:
                     with tqdm(total=self.data.get_train_data_length()) as pbar:
                         while True:
@@ -48,8 +44,7 @@ class Train:
                 except tf.errors.OutOfRangeError:
                     pass
 
-                self.model.dataset.initialize_iterator(sess, self.data.X_val,
-                                                       self.data.val_seq_len, self.data.y_val)
+                self.model.dataset.initialize_iterator(sess, self.data.X_val, self.data.y_val)
                 try:
                     with tqdm(total=self.data.get_val_data_length()) as pbar:
                         while True:
@@ -78,7 +73,7 @@ class Train:
                 saved_model_path = os.path.join(self._save_path, str(self._epochs - 1))
                 tf.saved_model.loader.load(sess, [tf.saved_model.tag_constants.SERVING], saved_model_path)
                 self.model.dataset.initialize_test_iterator_for_saved_model_graph(sess, self.data.X_test_id,
-                                                                    self.data.X_test, self.data.test_seq_len)
+                                                                    self.data.X_test)
 
                 csv_fid = csv.writer(fid)
                 csv_fid.writerow(['PhraseId', 'Sentiment'])
@@ -102,7 +97,6 @@ class Train:
         inputs = {
             'pl_phrase_id': sess.graph.get_tensor_by_name('pl_phrase_id:0'),
             'pl_phrase_text': sess.graph.get_tensor_by_name('pl_phrase_text:0'),
-            'pl_phrase_len': sess.graph.get_tensor_by_name('pl_phrase_len:0'),
             'pl_sentiment': sess.graph.get_tensor_by_name('pl_sentiment:0')
         }
         outputs = {'accuracy': self.model.accuracy}
