@@ -9,4 +9,6 @@ TextEmbeddings/SentenceLevel/Model/*
 TextEmbeddings/WordLevel/Data/*
 TextEmbeddings/WordLevel/Model/*
 ObjectDetection/Data/ImgsPlot
+VideoClassification/Model/*
+VideoClassification/Data/*
 
