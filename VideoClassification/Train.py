@@ -72,7 +72,6 @@ class Train:
                 self._save_model(sess, epoch_no)
 
     def test(self, ):
-        tf.reset_default_graph()
         test_graph = tf.Graph()
         with test_graph.as_default():
             with tf.Session(graph=test_graph) as sess,\

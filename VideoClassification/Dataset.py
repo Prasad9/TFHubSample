@@ -1,9 +1,7 @@
-import os
 import tensorflow as tf
 
 class Dataset:
     def __init__(self, params):
-        self._data_path = os.path.abspath(params['DATA_PATH'])
         self._seq_len = params['SEQ_LEN']
         self._batch_size = params['BATCH_SIZE']
 
