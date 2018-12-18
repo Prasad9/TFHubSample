@@ -82,7 +82,7 @@ class Train:
                 self.model.dataset.initialize_test_iterator_for_saved_model_graph(sess,
                                                             self.data.X_test, self.data.X_test_filenames)
 
-                csv_fid = csv.writer(fid)
+                csv_fid = csv.writer(fid, delimiter=';')
                 logits_op = test_graph.get_tensor_by_name('logits:0')
                 predictions_op = tf.argmax(logits_op, axis=1)
                 data_y_op = test_graph.get_tensor_by_name('data_y:0')
