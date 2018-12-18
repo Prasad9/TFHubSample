@@ -1,3 +1,8 @@
+# TensorFlow Hub Module Samples
+This repository is a demonstration of usage of different types of TensorFlow Hub modules integrated with Datasets, Iterators and Saved_Models. Several of the modules, I have demoed with different types of online contest problems. For more explanation on these modules, please refer to my [Medium post](https://medium.com/ymedialabs-innovation/how-to-use-tensorflow-hub-with-code-examples-9100edec29af).
+
+---
+
 ## [Image Classification Module](ImageClassification)
 This is a demonstration of image classification performed using Inception V3 classification module. No training has been performed in this sample and direct inference obtained using Inception V3 model trained on ImageNet 1000 classes is used.
 
